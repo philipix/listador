@@ -226,7 +226,6 @@ li {
     padding: 0.75rem;
     border-bottom: 1px solid #f1f5f9;
     gap: 0.75rem;
-    cursor: pointer;
     transition: all 0.2s;
 }
 
@@ -236,6 +235,17 @@ li:hover {
 
 li span {
     flex: 1;
+}
+
+.task-check {
+    flex: 0 0 auto;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: none;
+    margin: 0;
+    accent-color: var(--primary);
+    cursor: pointer;
 }
 
 /* Faded and Strikethrough effect */
@@ -277,4 +287,21 @@ li.completed span {
 .delete-btn:hover {
     background: #fee2e2;
     color: #ef4444;
+}
+
+.copy-list-btn {
+    width: 100%;
+    background: #e2e8f0;
+    color: var(--text);
+    margin-bottom: 2rem;
+}
+
+.copy-list-btn:hover:not(:disabled) {
+    background: #cbd5e1;
+    filter: none;
+}
+
+.copy-list-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
 }

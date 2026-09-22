@@ -15,7 +15,10 @@ const translations = {
         addBtn: "Add",
         sectionPending: "Pending",
         sectionCompleted: "Completed",
-        deleteTooltip: "Delete task"
+        deleteTooltip: "Delete task",
+        toggleDone: "Toggle done",
+        copyListBtn: "Copy pending items",
+        copiedBtn: "Copied!"
     },
     'pt-BR': {
         homeTitle: "Listas",
@@ -32,7 +35,10 @@ const translations = {
         addBtn: "Adicionar",
         sectionPending: "Pendentes",
         sectionCompleted: "Concluídas",
-        deleteTooltip: "Excluir tarefa"
+        deleteTooltip: "Excluir tarefa",
+        toggleDone: "Alternar concluído",
+        copyListBtn: "Copiar itens pendentes",
+        copiedBtn: "Copiado!"
     },
     es: {
         homeTitle: "Listas",
@@ -49,7 +55,10 @@ const translations = {
         addBtn: "Agregar",
         sectionPending: "Pendientes",
         sectionCompleted: "Completadas",
-        deleteTooltip: "Eliminar item"
+        deleteTooltip: "Eliminar item",
+        toggleDone: "Alternar completado",
+        copyListBtn: "Copiar ítems pendientes",
+        copiedBtn: "¡Copiado!"
     }
 };
 
@@ -78,6 +87,7 @@ function initI18n() {
     document.getElementById('add-btn').textContent = t('addBtn');
     document.getElementById('pending-title').textContent = t('sectionPending');
     document.getElementById('completed-title').textContent = t('sectionCompleted');
+    document.getElementById('copy-list-btn').textContent = t('copyListBtn');
 }
 
 function changeLanguage(newLang) {
@@ -110,6 +120,7 @@ const todoInput = document.getElementById('todo-input');
 const addBtn = document.getElementById('add-btn');
 const todoList = document.getElementById('todo-list');
 const completedList = document.getElementById('completed-list');
+const copyListBtn = document.getElementById('copy-list-btn');
 
 // State
 let todoLists = JSON.parse(localStorage.getItem('todo_lists')) || [];
@@ -163,13 +174,14 @@ function renderHome() {
         
         li.innerHTML = `
             <div class="list-info">
-                <span class="list-name">${list.name}</span>
+                <span class="list-name"></span>
                 <span class="list-count">${pendingCount} ${t('pending')} / ${totalCount} ${t('total')}</span>
             </div>
             <div class="list-actions">
                 <button class="btn-danger" data-action="delete">${t('deleteBtn')}</button>
             </div>
         `;
+        li.querySelector('.list-name').textContent = list.name;
 
         li.addEventListener('click', (e) => {
             if (e.target.dataset.action === 'delete') {
@@ -226,6 +238,8 @@ function renderTasks() {
     const list = todoLists.find(l => l.id === currentListId);
     if (!list) return;
 
+    copyListBtn.disabled = !list.tasks.some(task => !task.completed);
+
     todoList.innerHTML = '';
     completedList.innerHTML = '';
 
@@ -234,14 +248,14 @@ function renderTasks() {
         if (task.completed) li.classList.add('completed');
 
         li.innerHTML = `
-            <span>${task.text}</span>
+            <input type="checkbox" class="task-check" aria-label="${t('toggleDone')}" ${task.completed ? 'checked' : ''}>
+            <span></span>
             <button class="delete-btn" title="${t('deleteTooltip')}">&times;</button>
         `;
+        li.querySelector('span').textContent = task.text;
 
-        li.addEventListener('click', (e) => {
-            if (e.target.tagName !== 'BUTTON') {
-                toggleTask(index);
-            }
+        li.querySelector('.task-check').addEventListener('change', () => {
+            toggleTask(index);
         });
 
         li.querySelector('.delete-btn').addEventListener('click', (e) => {
@@ -299,11 +313,42 @@ listNameInput.addEventListener('keydown', (e) => {
 
 backBtn.addEventListener('click', showHomeView);
 addBtn.addEventListener('click', addTask);
-// todoInput is a textarea, Enter shouldn't submit, unless we want Cmd/Ctrl+Enter
+// Enter submits (pasted multi-line input is still split per line); Shift+Enter makes a newline
 todoInput.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+        e.preventDefault();
         addTask();
     }
+});
+
+copyListBtn.addEventListener('click', async () => {
+    const list = todoLists.find(l => l.id === currentListId);
+    if (!list) return;
+
+    const text = list.tasks
+        .filter(task => !task.completed)
+        .map(task => task.text)
+        .join('\n');
+    if (!text) return;
+
+    try {
+        await navigator.clipboard.writeText(text);
+    } catch {
+        // Fallback for browsers/contexts without the async clipboard API
+        const helper = document.createElement('textarea');
+        helper.value = text;
+        helper.style.position = 'fixed';
+        helper.style.opacity = '0';
+        document.body.appendChild(helper);
+        helper.select();
+        document.execCommand('copy');
+        helper.remove();
+    }
+
+    copyListBtn.textContent = t('copiedBtn');
+    setTimeout(() => {
+        copyListBtn.textContent = t('copyListBtn');
+    }, 1500);
 });
 
 // Initial render
