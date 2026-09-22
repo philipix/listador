@@ -12,7 +12,7 @@ const translations = {
         total: "total",
         backBtn: "Back",
         taskPlaceholder: "New items (Paste a list or type one)",
-        addBtn: "Add items",
+        addBtn: "Add",
         sectionPending: "Pending",
         sectionCompleted: "Completed",
         deleteTooltip: "Delete task"
@@ -29,7 +29,7 @@ const translations = {
         total: "total",
         backBtn: "Voltar",
         taskPlaceholder: "Novos ítens (Cole ou digite uma lista)",
-        addBtn: "Adicionar ítens",
+        addBtn: "Adicionar",
         sectionPending: "Pendentes",
         sectionCompleted: "Concluídas",
         deleteTooltip: "Excluir tarefa"
@@ -46,7 +46,7 @@ const translations = {
         total: "total",
         backBtn: "Volver",
         taskPlaceholder: "Nuevos itens (Pegue o escriba una lista)",
-        addBtn: "Agregar itens",
+        addBtn: "Agregar",
         sectionPending: "Pendientes",
         sectionCompleted: "Completadas",
         deleteTooltip: "Eliminar item"
