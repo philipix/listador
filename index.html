@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listador</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="lang-selector">
+        <select id="lang-select">
+            <option value="en">English</option>
+            <option value="pt-BR">Português (BR)</option>
+            <option value="es">Español</option>
+        </select>
+    </div>
+    <div class="container" id="home-view">
+        <h1 id="home-title">My Todo Lists</h1>
+        <button id="new-list-btn" class="new-list-btn">+ New List</button>
+        <div class="input-section" id="new-list-section" hidden>
+            <input type="text" id="list-name-input" placeholder="New list name...">
+            <div class="input-actions">
+                <button id="cancel-new-list-btn" class="secondary-btn">Cancel</button>
+                <button id="create-list-btn">Create</button>
+            </div>
+        </div>
+        <ul id="lists-container"></ul>
+    </div>
+
+    <div class="container" id="list-detail-view" style="display: none;">
+        <div class="header-row">
+            <button id="back-btn" class="secondary-btn">&larr; <span id="back-btn-text">Back</span></button>
+            <h1 id="current-list-title">Tasks</h1>
+        </div>
+        <div class="section-title" id="pending-title">Pending</div>
+        <ul id="todo-list"></ul>
+        
+        <div class="section-title completed-title" id="completed-title">Completed</div>
+        <ul id="completed-list"></ul>
+
+        <div class="input-section">
+            <textarea id="todo-input" placeholder="What needs to be done? (Paste a list or type one)"></textarea>
+            <button id="add-btn">Add Tasks</button>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
