@@ -6,7 +6,7 @@ const translations = {
         createBtn: "Create",
         newListBtn: "+ New List",
         cancelBtn: "Cancel",
-        deleteBtn: "Delete",
+        deleteListTooltip: "Delete list",
         deleteConfirm: 'Are you sure you want to delete "{name}"?',
         pending: "pending",
         total: "total",
@@ -26,7 +26,7 @@ const translations = {
         createBtn: "Criar",
         newListBtn: "+ Nova Lista",
         cancelBtn: "Cancelar",
-        deleteBtn: "Excluir",
+        deleteListTooltip: "Excluir lista",
         deleteConfirm: 'Tem certeza que deseja excluir "{name}"?',
         pending: "pendente(s)",
         total: "total",
@@ -46,7 +46,7 @@ const translations = {
         createBtn: "Crear",
         newListBtn: "+ Nueva Lista",
         cancelBtn: "Cancelar",
-        deleteBtn: "Eliminar",
+        deleteListTooltip: "Eliminar lista",
         deleteConfirm: '¿Estás seguro de que quieres eliminar "{name}"?',
         pending: "pendiente(s)",
         total: "total",
@@ -178,7 +178,7 @@ function renderHome() {
                 <span class="list-count">${pendingCount} ${t('pending')} / ${totalCount} ${t('total')}</span>
             </div>
             <div class="list-actions">
-                <button class="btn-danger" data-action="delete">${t('deleteBtn')}</button>
+                <button class="delete-btn" data-action="delete" title="${t('deleteListTooltip')}">&times;</button>
             </div>
         `;
         li.querySelector('.list-name').textContent = list.name;
