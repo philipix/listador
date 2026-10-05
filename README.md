@@ -10,6 +10,13 @@ A simple, multilingual to-do list app for managing multiple task lists. Built wi
 - **Pending / Completed sections** — click a task to toggle it, × to delete it
 - **Multilingual UI** — English, Português (BR), and Español, auto-detected from your browser
 - **Offline persistence** — everything is stored in your browser's `localStorage`, so your lists survive page reloads
+- **Installable (PWA)** — install it as an app from your browser and use it fully offline
+
+## Installing as an app
+
+Serve the folder over HTTP(S) (see below), open it in Chrome/Edge, and use the in-app **Install app** button or the install icon in the address bar. In Firefox and Safari (iOS), use the browser menu: "Install" / "Add to Home Screen". Once installed, Listador runs in its own window and works completely offline thanks to the service worker.
+
+Note: installation and offline mode require the app to be served over `http://localhost` or HTTPS — opening `index.html` directly as a file still works, but without those features.
 
 ## Running
 
@@ -31,9 +38,12 @@ Then visit http://localhost:8000. Opening `index.html` directly in a browser als
 ## Project structure
 
 ```
-index.html   # Page markup and views (home + list detail)
-style.css    # Styling
-app.js       # App logic, i18n translations, and localStorage handling
+index.html             # Page markup and views (home + list detail)
+style.css              # Styling
+app.js                 # App logic, i18n translations, and localStorage handling
+manifest.webmanifest   # PWA manifest (name, icons, colors, display mode)
+sw.js                  # Service worker (offline caching)
+icons/                 # PWA icons rendered from icon.svg (PNG, incl. maskable)
 ```
 
 ## Data storage

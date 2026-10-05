@@ -18,7 +18,8 @@ const translations = {
         deleteTooltip: "Delete task",
         toggleDone: "Toggle done",
         copyListBtn: "Copy pending items",
-        copiedBtn: "Copied!"
+        copiedBtn: "Copied!",
+        installBtn: "Install app"
     },
     'pt-BR': {
         homeTitle: "Listas",
@@ -38,7 +39,8 @@ const translations = {
         deleteTooltip: "Excluir tarefa",
         toggleDone: "Alternar concluído",
         copyListBtn: "Copiar itens pendentes",
-        copiedBtn: "Copiado!"
+        copiedBtn: "Copiado!",
+        installBtn: "Instalar app"
     },
     es: {
         homeTitle: "Listas",
@@ -58,7 +60,8 @@ const translations = {
         deleteTooltip: "Eliminar item",
         toggleDone: "Alternar completado",
         copyListBtn: "Copiar ítems pendientes",
-        copiedBtn: "¡Copiado!"
+        copiedBtn: "¡Copiado!",
+        installBtn: "Instalar app"
     }
 };
 
@@ -88,6 +91,7 @@ function initI18n() {
     document.getElementById('pending-title').textContent = t('sectionPending');
     document.getElementById('completed-title').textContent = t('sectionCompleted');
     document.getElementById('copy-list-btn').textContent = t('copyListBtn');
+    document.getElementById('install-btn').textContent = t('installBtn');
 }
 
 function changeLanguage(newLang) {
@@ -354,3 +358,31 @@ copyListBtn.addEventListener('click', async () => {
 // Initial render
 initI18n();
 showHomeView();
+
+// PWA: custom install button (shown only when the browser offers installation)
+let deferredInstallPrompt = null;
+const installBtn = document.getElementById('install-btn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    installBtn.hidden = false;
+});
+
+installBtn.addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    installBtn.hidden = true;
+});
+
+window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    installBtn.hidden = true;
+});
+
+// PWA: offline support. Skipped on file:// (only http(s) pages can register workers).
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    navigator.serviceWorker.register('sw.js');
+}
