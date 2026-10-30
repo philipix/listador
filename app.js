@@ -313,9 +313,9 @@ function finishTaskEditor() {
     saveTodoLists();
 }
 
-function focusSelectedTask() {
-    const text = listDetailView.querySelector('.task-row.selected .task-text');
-    if (text) text.focus();
+function focusTask(task = selectedTask) {
+    const row = Array.from(listDetailView.querySelectorAll('.task-row')).find(row => tasksByRow.get(row) === task);
+    if (row) row.querySelector('.task-text').focus();
 }
 
 function announceTaskPosition(task) {
@@ -345,7 +345,7 @@ function moveSelectedTask(direction) {
     [section[index], section[next]] = [section[next], section[index]];
     saveTaskOrder(selectedTask, section);
     renderTasks();
-    focusSelectedTask();
+    focusTask();
     listDetailView.querySelector('.task-row.selected').scrollIntoView({ block: 'nearest' });
     announceTaskPosition(selectedTask);
 }
@@ -412,7 +412,7 @@ function finishTaskDrag(cancelled) {
     if (!active) return;
     suppressTaskClick = true;
     renderTasks();
-    focusSelectedTask();
+    focusTask();
     if (cancelled) {
         document.getElementById('task-move-status').textContent = t('moveCancelled');
     } else {
@@ -421,10 +421,11 @@ function finishTaskDrag(cancelled) {
 }
 
 function selectTask(task) {
+    const deselect = selectedTask === task;
     finishTaskEditor();
-    selectedTask = task;
+    selectedTask = deselect ? null : task;
     renderTasks();
-    focusSelectedTask();
+    focusTask(task);
 }
 
 function startTaskEditor(task, mode) {
@@ -459,13 +460,13 @@ function renderTaskEditor(task) {
     const save = taskAction('save', t('saveItem'), () => {
         finishTaskEditor();
         renderTasks();
-        focusSelectedTask();
+        focusTask();
     });
     save.disabled = !input.value.trim();
     const cancel = taskAction('cancel', t('cancelItem'), () => {
         taskEditor = null;
         renderTasks();
-        focusSelectedTask();
+        focusTask();
     });
     actions.append(save, cancel);
     input.addEventListener('input', () => {
@@ -616,8 +617,14 @@ document.addEventListener('pointermove', (event) => {
 
 document.addEventListener('pointerup', (event) => {
     if (!taskDrag || event.pointerId !== taskDrag.pointerId) return;
+    const { task, active } = taskDrag;
     taskDrag.y = event.clientY;
     finishTaskDrag(false);
+    // Handle taps directly: browsers can omit the click immediately after a touch drag.
+    if (!active && event.pointerType === 'touch') {
+        suppressTaskClick = true;
+        selectTask(task);
+    }
 });
 document.addEventListener('pointercancel', (event) => {
     if (taskDrag && event.pointerId === taskDrag.pointerId) finishTaskDrag(true);

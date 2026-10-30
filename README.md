@@ -36,7 +36,7 @@ Then visit http://localhost:8000. Opening `index.html` directly in a browser als
 2. Click a list to open it
 3. Type or paste tasks into the text area and click **Add items** (Ctrl/Cmd+Enter also works)
 4. Use a task's checkbox to toggle it between pending and completed
-5. Click a task to select it and reveal its edit, insert-below, and delete buttons
+5. Click or tap a task to select it and reveal its edit, insert-below, and delete buttons. Click or tap it again to deselect it.
 6. Edit the text inline, or insert a new item directly below it in the same pending/completed section. Use the checkmark or Enter to save, or × / Escape to cancel. Clicking another item or leaving the list saves nonempty drafts; empty drafts are discarded.
 7. To reorder, select an item and drag its text or row up/down with a mouse or touch, or press ↑ / ↓ while its text or action buttons have focus. Items stay in their pending/completed section, and the new order is saved automatically. Drag near the screen's top or bottom to scroll; Escape cancels a drag.
 
