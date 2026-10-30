@@ -22,6 +22,8 @@ const translations = {
         newItemLabel: "New item",
         saveItem: "Save item",
         cancelItem: "Cancel",
+        itemMoved: "{name}: position {position} of {total}.",
+        moveCancelled: "Move cancelled.",
         toggleDone: "Toggle done",
         copyListBtn: "Copy pending items",
         copiedBtn: "Copied!",
@@ -49,6 +51,8 @@ const translations = {
         newItemLabel: "Novo item",
         saveItem: "Salvar item",
         cancelItem: "Cancelar",
+        itemMoved: "{name}: posição {position} de {total}.",
+        moveCancelled: "Movimento cancelado.",
         toggleDone: "Alternar concluído",
         copyListBtn: "Copiar itens pendentes",
         copiedBtn: "Copiado!",
@@ -76,6 +80,8 @@ const translations = {
         newItemLabel: "Nuevo ítem",
         saveItem: "Guardar ítem",
         cancelItem: "Cancelar",
+        itemMoved: "{name}: posición {position} de {total}.",
+        moveCancelled: "Movimiento cancelado.",
         toggleDone: "Alternar completado",
         copyListBtn: "Copiar ítems pendientes",
         copiedBtn: "¡Copiado!",
@@ -110,6 +116,7 @@ function initI18n() {
     document.getElementById('completed-title').textContent = t('sectionCompleted');
     document.getElementById('copy-list-btn').textContent = t('copyListBtn');
     document.getElementById('install-btn').textContent = t('installBtn');
+    document.getElementById('task-move-status').textContent = '';
 }
 
 function changeLanguage(newLang) {
@@ -162,6 +169,9 @@ if (oldTodos && oldTodos.length > 0 && todoLists.length === 0) {
 let currentListId = null;
 let selectedTask = null;
 let taskEditor = null;
+let taskDrag = null;
+let suppressTaskClick = false;
+const tasksByRow = new WeakMap();
 
 // Persistent storage functions
 function saveTodoLists() {
@@ -170,6 +180,7 @@ function saveTodoLists() {
 
 // View switching
 function showHomeView() {
+    clearTaskDrag();
     finishTaskEditor();
     selectedTask = null;
     homeView.style.display = 'block';
@@ -307,6 +318,108 @@ function focusSelectedTask() {
     if (text) text.focus();
 }
 
+function announceTaskPosition(task) {
+    const list = todoLists.find(l => l.id === currentListId);
+    const section = list.tasks.filter(item => item.completed === task.completed);
+    document.getElementById('task-move-status').textContent = t('itemMoved', {
+        name: task.text,
+        position: section.indexOf(task) + 1,
+        total: section.length
+    });
+}
+
+// Replace only this section's slots, leaving the other section's order intact.
+function saveTaskOrder(task, orderedTasks) {
+    const list = todoLists.find(l => l.id === currentListId);
+    let index = 0;
+    list.tasks = list.tasks.map(item => item.completed === task.completed ? orderedTasks[index++] : item);
+    saveTodoLists();
+}
+
+function moveSelectedTask(direction) {
+    const list = todoLists.find(l => l.id === currentListId);
+    const section = list.tasks.filter(task => task.completed === selectedTask.completed);
+    const index = section.indexOf(selectedTask);
+    const next = index + direction;
+    if (index < 0 || next < 0 || next >= section.length) return;
+    [section[index], section[next]] = [section[next], section[index]];
+    saveTaskOrder(selectedTask, section);
+    renderTasks();
+    focusSelectedTask();
+    listDetailView.querySelector('.task-row.selected').scrollIntoView({ block: 'nearest' });
+    announceTaskPosition(selectedTask);
+}
+
+function clearTaskDrag() {
+    if (!taskDrag) return;
+    const drag = taskDrag;
+    taskDrag = null;
+    cancelAnimationFrame(drag.frame);
+    if (drag.preview) drag.preview.remove();
+    drag.row.classList.remove('task-drag-placeholder');
+    document.body.classList.remove('task-dragging');
+    if (listDetailView.hasPointerCapture(drag.pointerId)) {
+        listDetailView.releasePointerCapture(drag.pointerId);
+    }
+}
+
+function updateTaskDragPosition() {
+    const drag = taskDrag;
+    if (!drag || !drag.active) return;
+    drag.preview.style.top = `${drag.y - drag.offsetY}px`;
+    const before = Array.from(drag.container.children).find(row => {
+        if (row === drag.row) return false;
+        const rect = row.getBoundingClientRect();
+        return drag.y < rect.top + rect.height / 2;
+    });
+    if (drag.row.nextElementSibling !== (before || null)) {
+        drag.container.insertBefore(drag.row, before || null);
+    }
+}
+
+function scrollTaskDrag() {
+    if (!taskDrag || !taskDrag.active) return;
+    const edge = 56;
+    const y = taskDrag.y;
+    const speed = y < edge ? -Math.min(18, (edge - y) / 3)
+        : y > innerHeight - edge ? Math.min(18, (y - innerHeight + edge) / 3) : 0;
+    if (speed) window.scrollBy(0, speed);
+    updateTaskDragPosition();
+    taskDrag.frame = requestAnimationFrame(scrollTaskDrag);
+}
+
+function startTaskDrag(event, task, row) {
+    if (selectedTask !== task || taskEditor || taskDrag || !event.isPrimary || event.button !== 0) return;
+    if (event.target.closest('input, textarea, .task-actions')) return;
+    const rect = row.getBoundingClientRect();
+    taskDrag = {
+        task, row, container: row.parentElement, pointerId: event.pointerId,
+        startX: event.clientX, startY: event.clientY, y: event.clientY,
+        offsetY: event.clientY - rect.top, active: false
+    };
+    // The selected row is the drag surface; normal scrolling remains on other rows.
+    event.preventDefault();
+}
+
+function finishTaskDrag(cancelled) {
+    if (!taskDrag) return;
+    const { task, container, active } = taskDrag;
+    if (active && !cancelled) {
+        updateTaskDragPosition();
+        saveTaskOrder(task, Array.from(container.children, row => tasksByRow.get(row)));
+    }
+    clearTaskDrag();
+    if (!active) return;
+    suppressTaskClick = true;
+    renderTasks();
+    focusSelectedTask();
+    if (cancelled) {
+        document.getElementById('task-move-status').textContent = t('moveCancelled');
+    } else {
+        announceTaskPosition(task);
+    }
+}
+
 function selectTask(task) {
     finishTaskEditor();
     selectedTask = task;
@@ -376,6 +489,7 @@ function renderTaskEditor(task) {
 }
 
 function renderTasks() {
+    clearTaskDrag();
     const list = todoLists.find(l => l.id === currentListId);
     if (!list) return;
 
@@ -392,6 +506,7 @@ function renderTasks() {
         }
         const li = document.createElement('li');
         li.className = 'task-row';
+        tasksByRow.set(li, task);
         if (task.completed) li.classList.add('completed');
         if (selectedTask === task) li.classList.add('selected');
 
@@ -399,8 +514,10 @@ function renderTasks() {
             <input type="checkbox" class="task-check" aria-label="${t('toggleDone')}" ${task.completed ? 'checked' : ''}>
             <button type="button" class="task-text" aria-pressed="${selectedTask === task}"></button>
         `;
+        if (selectedTask === task) li.querySelector('.task-text').setAttribute('aria-keyshortcuts', 'ArrowUp ArrowDown');
         li.querySelector('.task-text').textContent = task.text;
         li.addEventListener('click', () => selectTask(task));
+        li.addEventListener('pointerdown', event => startTaskDrag(event, task, li));
         const actions = document.createElement('div');
         actions.className = 'task-actions';
         actions.hidden = selectedTask !== task;
@@ -464,6 +581,59 @@ function deleteTask(task) {
 }
 
 // Event Listeners
+document.addEventListener('pointerdown', () => { suppressTaskClick = false; }, true);
+document.addEventListener('click', (event) => {
+    if (suppressTaskClick && event.detail !== 0) {
+        suppressTaskClick = false;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+    }
+}, true);
+
+document.addEventListener('pointermove', (event) => {
+    if (!taskDrag || event.pointerId !== taskDrag.pointerId) return;
+    taskDrag.y = event.clientY;
+    if (!taskDrag.active) {
+        if (Math.hypot(event.clientX - taskDrag.startX, event.clientY - taskDrag.startY) < 8) return;
+        taskDrag.active = true;
+        const rect = taskDrag.row.getBoundingClientRect();
+        const preview = taskDrag.row.cloneNode(true);
+        preview.classList.add('task-drag-preview');
+        preview.setAttribute('aria-hidden', 'true');
+        preview.inert = true;
+        preview.style.left = `${rect.left}px`;
+        preview.style.width = `${rect.width}px`;
+        document.body.appendChild(preview);
+        taskDrag.preview = preview;
+        taskDrag.row.classList.add('task-drag-placeholder');
+        document.body.classList.add('task-dragging');
+        listDetailView.setPointerCapture(event.pointerId);
+        taskDrag.frame = requestAnimationFrame(scrollTaskDrag);
+    }
+    event.preventDefault();
+    updateTaskDragPosition();
+}, { passive: false });
+
+document.addEventListener('pointerup', (event) => {
+    if (!taskDrag || event.pointerId !== taskDrag.pointerId) return;
+    taskDrag.y = event.clientY;
+    finishTaskDrag(false);
+});
+document.addEventListener('pointercancel', (event) => {
+    if (taskDrag && event.pointerId === taskDrag.pointerId) finishTaskDrag(true);
+});
+listDetailView.addEventListener('lostpointercapture', (event) => {
+    if (event.target === listDetailView && taskDrag && event.pointerId === taskDrag.pointerId) finishTaskDrag(true);
+});
+window.addEventListener('blur', () => finishTaskDrag(true));
+document.addEventListener('keydown', (event) => {
+    if (taskDrag && event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        finishTaskDrag(true);
+    }
+}, true);
+
 document.addEventListener('click', (event) => {
     if (!currentListId || event.target.closest('.task-row') || (!selectedTask && !taskEditor)) return;
     finishTaskEditor();
@@ -472,6 +642,12 @@ document.addEventListener('click', (event) => {
 });
 
 listDetailView.addEventListener('keydown', (event) => {
+    if (!taskEditor && !taskDrag && selectedTask && !event.isComposing && !event.altKey && !event.ctrlKey && !event.metaKey
+        && event.target.closest('.task-row.selected') && !event.target.closest('input, textarea')
+        && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+        event.preventDefault();
+        moveSelectedTask(event.key === 'ArrowUp' ? -1 : 1);
+    }
     if (event.key === 'Escape' && !event.defaultPrevented && selectedTask) {
         const texts = Array.from(listDetailView.querySelectorAll('.task-text'));
         const index = texts.findIndex(button => button.getAttribute('aria-pressed') === 'true');

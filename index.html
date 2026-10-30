@@ -16,13 +16,6 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="lang-selector">
-        <select id="lang-select">
-            <option value="en">English</option>
-            <option value="pt-BR">Português (BR)</option>
-            <option value="es">Español</option>
-        </select>
-    </div>
     <div class="container" id="home-view">
         <h1 id="home-title">My Todo Lists</h1>
         <ul id="lists-container"></ul>
@@ -41,6 +34,7 @@
             <button id="back-btn" class="secondary-btn">&larr; <span id="back-btn-text">Back</span></button>
             <h1 id="current-list-title">Tasks</h1>
         </div>
+        <div id="task-move-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
         <div class="section-title" id="pending-title">Pending</div>
         <ul id="todo-list"></ul>
         
@@ -53,6 +47,13 @@
         </div>
         <button id="copy-list-btn" class="copy-list-btn">Copy pending items</button>
     </div>
+    <footer class="lang-selector">
+        <select id="lang-select" aria-label="Language">
+            <option value="en">English</option>
+            <option value="pt-BR">Português (BR)</option>
+            <option value="es">Español</option>
+        </select>
+    </footer>
     <button id="install-btn" class="install-btn" hidden>Install app</button>
     <script src="app.js"></script>
 </body>

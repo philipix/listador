@@ -1,5 +1,5 @@
 // Bump the version whenever you change any cached file, so clients pick up the update.
-const CACHE_NAME = 'listador-v3';
+const CACHE_NAME = 'listador-v6';
 
 const APP_SHELL = [
     './',
