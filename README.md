@@ -7,7 +7,8 @@ A simple, multilingual to-do list app for managing multiple task lists. Built wi
 - **Multiple lists** — create, open, and delete as many task lists as you need
 - **New-list form** — hidden behind a "+ New List" button to keep the home screen clean
 - **Bulk task adding** — paste or type multiple lines at once; each line becomes a task
-- **Pending / Completed sections** — click a task to toggle it, × to delete it
+- **Pending / Completed sections** — use a task's checkbox to toggle it
+- **Inline editing** — select a task to reveal edit, insert-below, and delete buttons
 - **Multilingual UI** — English, Português (BR), and Español, auto-detected from your browser
 - **Offline persistence** — everything is stored in your browser's `localStorage`, so your lists survive page reloads
 - **Installable (PWA)** — install it as an app from your browser and use it fully offline
@@ -33,7 +34,9 @@ Then visit http://localhost:8000. Opening `index.html` directly in a browser als
 1. Click **+ New List**, type a name, and press Enter (or click Create)
 2. Click a list to open it
 3. Type or paste tasks into the text area and click **Add items** (Ctrl/Cmd+Enter also works)
-4. Click a task to toggle it between pending and completed
+4. Use a task's checkbox to toggle it between pending and completed
+5. Click a task to select it and reveal its edit, insert-below, and delete buttons
+6. Edit the text inline, or insert a new item directly below it in the same pending/completed section. Use the checkmark or Enter to save, or × / Escape to cancel. Clicking another item or leaving the list saves nonempty drafts; empty drafts are discarded.
 
 ## Project structure
 

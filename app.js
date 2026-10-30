@@ -16,6 +16,12 @@ const translations = {
         sectionPending: "Pending",
         sectionCompleted: "Completed",
         deleteTooltip: "Delete task",
+        editTooltip: "Edit item",
+        insertTooltip: "Insert item below",
+        editItemLabel: "Item text",
+        newItemLabel: "New item",
+        saveItem: "Save item",
+        cancelItem: "Cancel",
         toggleDone: "Toggle done",
         copyListBtn: "Copy pending items",
         copiedBtn: "Copied!",
@@ -37,6 +43,12 @@ const translations = {
         sectionPending: "Pendentes",
         sectionCompleted: "Concluídas",
         deleteTooltip: "Excluir tarefa",
+        editTooltip: "Editar item",
+        insertTooltip: "Inserir item abaixo",
+        editItemLabel: "Texto do item",
+        newItemLabel: "Novo item",
+        saveItem: "Salvar item",
+        cancelItem: "Cancelar",
         toggleDone: "Alternar concluído",
         copyListBtn: "Copiar itens pendentes",
         copiedBtn: "Copiado!",
@@ -58,6 +70,12 @@ const translations = {
         sectionPending: "Pendientes",
         sectionCompleted: "Completadas",
         deleteTooltip: "Eliminar item",
+        editTooltip: "Editar ítem",
+        insertTooltip: "Insertar ítem debajo",
+        editItemLabel: "Texto del ítem",
+        newItemLabel: "Nuevo ítem",
+        saveItem: "Guardar ítem",
+        cancelItem: "Cancelar",
         toggleDone: "Alternar completado",
         copyListBtn: "Copiar ítems pendientes",
         copiedBtn: "¡Copiado!",
@@ -142,6 +160,8 @@ if (oldTodos && oldTodos.length > 0 && todoLists.length === 0) {
 }
 
 let currentListId = null;
+let selectedTask = null;
+let taskEditor = null;
 
 // Persistent storage functions
 function saveTodoLists() {
@@ -150,6 +170,8 @@ function saveTodoLists() {
 
 // View switching
 function showHomeView() {
+    finishTaskEditor();
+    selectedTask = null;
     homeView.style.display = 'block';
     listDetailView.style.display = 'none';
     currentListId = null;
@@ -161,6 +183,8 @@ function showDetailView(listId) {
     homeView.style.display = 'none';
     listDetailView.style.display = 'block';
     currentListId = listId;
+    selectedTask = null;
+    taskEditor = null;
     const list = todoLists.find(l => l.id === listId);
     currentListTitle.textContent = list.name;
     renderTasks();
@@ -238,6 +262,119 @@ function deleteList(id) {
 }
 
 // Task management
+const taskIcons = {
+    edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5M4 20l5-1L21 7l-5-5L4 14z"/></svg>',
+    insert: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M12 11v10M7 16h10"/></svg>',
+    save: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>',
+    cancel: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg>'
+};
+
+function taskAction(action, label, onClick) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `task-action ${action}-btn`;
+    button.title = label;
+    button.setAttribute('aria-label', label);
+    button.innerHTML = taskIcons[action] || '&times;';
+    button.addEventListener('click', (event) => {
+        event.stopPropagation();
+        onClick();
+    });
+    return button;
+}
+
+// Drafts stay out of localStorage until saved. Leaving an editor saves nonempty text.
+function finishTaskEditor() {
+    if (!taskEditor) return;
+    const { mode, task, text } = taskEditor;
+    const list = todoLists.find(l => l.id === currentListId);
+    taskEditor = null;
+    const index = list ? list.tasks.indexOf(task) : -1;
+    if (index < 0 || !text.trim()) return;
+
+    if (mode === 'edit') {
+        task.text = text.trim();
+    } else {
+        const newTask = { text: text.trim(), completed: task.completed };
+        list.tasks.splice(index + 1, 0, newTask);
+        selectedTask = newTask;
+    }
+    saveTodoLists();
+}
+
+function focusSelectedTask() {
+    const text = listDetailView.querySelector('.task-row.selected .task-text');
+    if (text) text.focus();
+}
+
+function selectTask(task) {
+    finishTaskEditor();
+    selectedTask = task;
+    renderTasks();
+    focusSelectedTask();
+}
+
+function startTaskEditor(task, mode) {
+    finishTaskEditor();
+    selectedTask = task;
+    taskEditor = { mode, task, text: mode === 'edit' ? task.text : '' };
+    renderTasks();
+    const input = listDetailView.querySelector('.task-editor');
+    input.focus();
+    if (mode === 'edit') input.select();
+}
+
+function renderTaskEditor(task) {
+    const li = document.createElement('li');
+    li.className = 'task-row selected editing';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'task-check';
+    checkbox.checked = task.completed;
+    checkbox.disabled = true;
+    checkbox.setAttribute('aria-label', t('toggleDone'));
+
+    const input = document.createElement('textarea');
+    input.className = 'task-editor';
+    input.rows = 1;
+    input.value = taskEditor.text;
+    input.setAttribute('aria-label', t(taskEditor.mode === 'edit' ? 'editItemLabel' : 'newItemLabel'));
+    input.placeholder = t('newItemLabel');
+
+    const actions = document.createElement('div');
+    actions.className = 'task-actions';
+    const save = taskAction('save', t('saveItem'), () => {
+        finishTaskEditor();
+        renderTasks();
+        focusSelectedTask();
+    });
+    save.disabled = !input.value.trim();
+    const cancel = taskAction('cancel', t('cancelItem'), () => {
+        taskEditor = null;
+        renderTasks();
+        focusSelectedTask();
+    });
+    actions.append(save, cancel);
+    input.addEventListener('input', () => {
+        taskEditor.text = input.value;
+        save.disabled = !input.value.trim();
+        input.style.height = 'auto';
+        input.style.height = `${input.scrollHeight}px`;
+    });
+    input.addEventListener('keydown', (event) => {
+        if (event.isComposing) return;
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            if (!save.disabled) save.click();
+        } else if (event.key === 'Escape') {
+            event.preventDefault();
+            cancel.click();
+        }
+    });
+    li.append(checkbox, input, actions);
+    return li;
+}
+
 function renderTasks() {
     const list = todoLists.find(l => l.id === currentListId);
     if (!list) return;
@@ -247,35 +384,51 @@ function renderTasks() {
     todoList.innerHTML = '';
     completedList.innerHTML = '';
 
-    list.tasks.forEach((task, index) => {
+    list.tasks.forEach(task => {
+        const targetList = task.completed ? completedList : todoList;
+        if (taskEditor && taskEditor.task === task && taskEditor.mode === 'edit') {
+            targetList.appendChild(renderTaskEditor(task));
+            return;
+        }
         const li = document.createElement('li');
+        li.className = 'task-row';
         if (task.completed) li.classList.add('completed');
+        if (selectedTask === task) li.classList.add('selected');
 
         li.innerHTML = `
             <input type="checkbox" class="task-check" aria-label="${t('toggleDone')}" ${task.completed ? 'checked' : ''}>
-            <span></span>
-            <button class="delete-btn" title="${t('deleteTooltip')}">&times;</button>
+            <button type="button" class="task-text" aria-pressed="${selectedTask === task}"></button>
         `;
-        li.querySelector('span').textContent = task.text;
+        li.querySelector('.task-text').textContent = task.text;
+        li.addEventListener('click', () => selectTask(task));
+        const actions = document.createElement('div');
+        actions.className = 'task-actions';
+        actions.hidden = selectedTask !== task;
+        actions.append(
+            taskAction('edit', t('editTooltip'), () => startTaskEditor(task, 'edit')),
+            taskAction('insert', t('insertTooltip'), () => startTaskEditor(task, 'insert')),
+            taskAction('delete', t('deleteTooltip'), () => deleteTask(task))
+        );
+        li.appendChild(actions);
 
-        li.querySelector('.task-check').addEventListener('change', () => {
-            toggleTask(index);
+        const checkbox = li.querySelector('.task-check');
+        checkbox.addEventListener('click', (event) => event.stopPropagation());
+        checkbox.addEventListener('change', () => {
+            toggleTask(task);
         });
 
-        li.querySelector('.delete-btn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            deleteTask(index);
-        });
-
-        if (task.completed) {
-            completedList.appendChild(li);
-        } else {
-            todoList.appendChild(li);
+        targetList.appendChild(li);
+        if (taskEditor && taskEditor.task === task && taskEditor.mode === 'insert') {
+            targetList.appendChild(renderTaskEditor(task));
         }
     });
+
+    const editor = listDetailView.querySelector('.task-editor');
+    if (editor) editor.style.height = `${editor.scrollHeight}px`;
 }
 
 function addTask() {
+    finishTaskEditor();
     const list = todoLists.find(l => l.id === currentListId);
     if (!list) return;
 
@@ -288,25 +441,47 @@ function addTask() {
         });
         todoInput.value = '';
         saveTodoLists();
-        renderTasks();
     }
+    renderTasks();
 }
 
-function toggleTask(index) {
-    const list = todoLists.find(l => l.id === currentListId);
-    list.tasks[index].completed = !list.tasks[index].completed;
+function toggleTask(task) {
+    finishTaskEditor();
+    task.completed = !task.completed;
     saveTodoLists();
     renderTasks();
 }
 
-function deleteTask(index) {
+function deleteTask(task) {
+    finishTaskEditor();
     const list = todoLists.find(l => l.id === currentListId);
+    const index = list.tasks.indexOf(task);
+    if (index < 0) return;
     list.tasks.splice(index, 1);
+    if (selectedTask === task) selectedTask = null;
     saveTodoLists();
     renderTasks();
 }
 
 // Event Listeners
+document.addEventListener('click', (event) => {
+    if (!currentListId || event.target.closest('.task-row') || (!selectedTask && !taskEditor)) return;
+    finishTaskEditor();
+    selectedTask = null;
+    renderTasks();
+});
+
+listDetailView.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !event.defaultPrevented && selectedTask) {
+        const texts = Array.from(listDetailView.querySelectorAll('.task-text'));
+        const index = texts.findIndex(button => button.getAttribute('aria-pressed') === 'true');
+        selectedTask = null;
+        renderTasks();
+        const text = listDetailView.querySelectorAll('.task-text')[index];
+        if (text) text.focus();
+    }
+});
+
 newListBtn.addEventListener('click', showNewListInput);
 cancelNewListBtn.addEventListener('click', hideNewListInput);
 createListBtn.addEventListener('click', createList);
@@ -326,6 +501,8 @@ todoInput.addEventListener('keydown', (e) => {
 });
 
 copyListBtn.addEventListener('click', async () => {
+    finishTaskEditor();
+    renderTasks();
     const list = todoLists.find(l => l.id === currentListId);
     if (!list) return;
 

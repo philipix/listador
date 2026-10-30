@@ -240,8 +240,105 @@ li:hover {
     background: #f8fafc;
 }
 
-li span {
+li span,
+.task-text {
     flex: 1;
+    font-size: 1.125rem;
+}
+
+.task-row {
+    display: grid;
+    grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+    gap: 0.625rem;
+    border-radius: 0.5rem;
+}
+
+.task-row.selected {
+    background: #eef2ff;
+}
+
+.task-text {
+    min-width: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-weight: 400;
+    line-height: 1.5;
+    text-align: left;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    border-radius: 0.25rem;
+}
+
+.task-text:focus-visible,
+.task-action:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
+}
+
+.task-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.task-actions[hidden] {
+    display: none;
+}
+
+.task-action,
+.task-actions .delete-btn {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0.375rem;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: #64748b;
+}
+
+.task-action:hover {
+    background: #e0e7ff;
+    color: var(--primary);
+}
+
+.task-action:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.task-action svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.task-editor {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--primary);
+    border-radius: 0.375rem;
+    background: var(--card);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 1.125rem;
+    line-height: 1.5;
+    resize: none;
+    overflow: hidden;
+}
+
+.task-editor:focus {
+    outline: 2px solid #c7d2fe;
+    outline-offset: 1px;
 }
 
 .task-check {
@@ -256,7 +353,7 @@ li span {
 }
 
 /* Faded and Strikethrough effect */
-li.completed span {
+li.completed .task-text {
     text-decoration: line-through;
     opacity: 0.5;
     color: var(--muted);
